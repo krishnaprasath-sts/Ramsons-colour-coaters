@@ -1,0 +1,14 @@
+node_modules/
+client/node_modules/
+client/dist/
+admin-dashboard/node_modules/
+admin-dashboard/dist/
+server/node_modules/
+server/.env
+server/data/.admin_token_secret
+*.log
+.DS_Store
+
+# Local AI agent tooling
+.agents/
+server/data/*.sqlite

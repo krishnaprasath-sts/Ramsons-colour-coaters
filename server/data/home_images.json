@@ -1,0 +1,16 @@
+{
+  "aboutPreview": {
+    "key": "aboutPreview",
+    "name": "About Section Facility Image",
+    "section": "About Ramson Preview Section",
+    "src": "/images/w6.jpg",
+    "description": "Main facility showcase photo displayed next to Ramson Colour Coaters history and core features."
+  },
+  "headerLogo": {
+    "key": "headerLogo",
+    "name": "Website Header Brand Logo",
+    "section": "Global Navigation Header",
+    "src": "/images/logo.jpg",
+    "description": "Official Ramson Colour Coaters logo shown across the navigation header."
+  }
+}
