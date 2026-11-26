@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaPlus } from 'react-icons/fa';
 import AdminLayout from './AdminLayout';
 import { authHeaders, sessionExpired } from './session';
+import { apiUrl } from '../lib/api';
 
 export default function BlogManage() {
   const navigate = useNavigate();
@@ -126,7 +127,7 @@ export default function BlogManage() {
                     <tr key={b.id}>
                       <td className="text-center align-middle">
                         <img
-                          src={`/uploads/${b.image}`}
+                          src={apiUrl(`/uploads/${b.image}`)}
                           alt={b.title}
                           style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
                           onError={(e) => { e.target.src = '/images/banner-1.jpeg'; }}

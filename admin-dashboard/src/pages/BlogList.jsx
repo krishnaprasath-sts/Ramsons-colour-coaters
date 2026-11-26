@@ -117,7 +117,7 @@ export default function BlogList() {
                     <td className="nowrap cell-sub">{formatDate(blog.created_at)}</td>
                     <td className="col-actions">
                       <div className="row-actions">
-                        <a
+                        {/* <a
                           href={`${SITE_URL}/viewblog/${blog.id}`}
                           target="_blank"
                           rel="noreferrer"
@@ -126,7 +126,7 @@ export default function BlogList() {
                           title="View on website"
                         >
                           <FiExternalLink aria-hidden="true" />
-                        </a>
+                        </a> */}
                         <Link
                           to={`/blogs/edit/${blog.id}`}
                           className="icon-btn"

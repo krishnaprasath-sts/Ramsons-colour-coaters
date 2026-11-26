@@ -136,6 +136,8 @@ export default function Home() {
                   src="/images/w6.jpg"
                   className="about-preview-img"
                   alt="Ramson Coating Facility"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="about-float-badge">
                   <h4>5x Growth</h4>

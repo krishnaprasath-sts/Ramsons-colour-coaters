@@ -44,9 +44,9 @@ function readBlogFields(body) {
 }
 
 // GET all blogs
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const blogs = db.prepare('SELECT * FROM blog ORDER BY id DESC').all();
+    const blogs = await db.all('SELECT * FROM blog ORDER BY id DESC');
     res.json({ success: true, blogs });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -54,9 +54,9 @@ router.get('/', (req, res) => {
 });
 
 // GET single blog by ID
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const blog = db.prepare('SELECT * FROM blog WHERE id = ?').get(req.params.id);
+    const blog = await db.get('SELECT * FROM blog WHERE id = ?', [req.params.id]);
     if (!blog) {
       return res.status(404).json({ success: false, error: 'Blog not found' });
     }
@@ -67,7 +67,7 @@ router.get('/:id', (req, res) => {
 });
 
 // POST create blog
-router.post('/', requireAdmin, uploadCover, (req, res) => {
+router.post('/', requireAdmin, uploadCover, async (req, res) => {
   try {
     const { title, description, author } = readBlogFields(req.body);
     const file = getUploadedCover(req);
@@ -77,14 +77,16 @@ router.post('/', requireAdmin, uploadCover, (req, res) => {
       return res.status(400).json({ success: false, error: 'Title is required' });
     }
 
-    const stmt = db.prepare('INSERT INTO blog (title, image, description, author) VALUES (?, ?, ?, ?)');
-    const result = stmt.run(title, image, description, author || DEFAULT_AUTHOR);
+    const result = await db.run(
+      'INSERT INTO blog (title, image, description, author) VALUES (?, ?, ?, ?)',
+      [title, image, description, author || DEFAULT_AUTHOR]
+    );
 
     res.status(201).json({
       success: true,
       message: 'Blog created successfully',
       blog: {
-        id: Number(result.lastInsertRowid),
+        id: result.insertId,
         title,
         image,
         description,
@@ -97,10 +99,10 @@ router.post('/', requireAdmin, uploadCover, (req, res) => {
 });
 
 // PUT update blog
-router.put('/:id', requireAdmin, uploadCover, (req, res) => {
+router.put('/:id', requireAdmin, uploadCover, async (req, res) => {
   try {
     const id = req.params.id;
-    const existing = db.prepare('SELECT * FROM blog WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM blog WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Blog not found' });
     }
@@ -113,8 +115,13 @@ router.put('/:id', requireAdmin, uploadCover, (req, res) => {
     const author = fields.author || existing.author || DEFAULT_AUTHOR;
     const image = file ? file.filename : existing.image;
 
-    const stmt = db.prepare('UPDATE blog SET title = ?, image = ?, description = ?, author = ? WHERE id = ?');
-    stmt.run(title, image, description, author, id);
+    await db.run('UPDATE blog SET title = ?, image = ?, description = ?, author = ? WHERE id = ?', [
+      title,
+      image,
+      description,
+      author,
+      id,
+    ]);
 
     res.json({
       success: true,
@@ -127,15 +134,15 @@ router.put('/:id', requireAdmin, uploadCover, (req, res) => {
 });
 
 // DELETE blog
-router.delete('/:id', requireAdmin, (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const id = req.params.id;
-    const existing = db.prepare('SELECT * FROM blog WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM blog WHERE id = ?', [id]);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Blog not found' });
     }
 
-    db.prepare('DELETE FROM blog WHERE id = ?').run(id);
+    await db.run('DELETE FROM blog WHERE id = ?', [id]);
 
     // Remove the uploaded cover image (basename only, so it can never leave /uploads)
     if (existing.image) {

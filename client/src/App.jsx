@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -11,16 +11,17 @@ import Contact from './pages/Contact';
 import Blogs from './pages/Blogs';
 import ViewBlog from './pages/ViewBlog';
 
-// Admin Pages
-import AdminLogin from './admin/AdminLogin';
-import DashboardHome from './admin/DashboardHome';
-import BlogManage from './admin/BlogManage';
-import BlogEdit from './admin/BlogEdit';
+// Admin Pages: downloaded only when someone opens /dashboard, not by website visitors
+const AdminLogin = lazy(() => import('./admin/AdminLogin'));
+const DashboardHome = lazy(() => import('./admin/DashboardHome'));
+const BlogManage = lazy(() => import('./admin/BlogManage'));
+const BlogEdit = lazy(() => import('./admin/BlogEdit'));
 
 export default function App() {
   return (
     <>
       <ScrollToTop />
+      <Suspense fallback={null}>
       <Routes>
       {/* Public Website Routes */}
       <Route path="/" element={<Home />} />
@@ -63,7 +64,8 @@ export default function App() {
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+      </Suspense>
     </>
   );
 }

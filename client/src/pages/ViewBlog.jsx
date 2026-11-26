@@ -1,48 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import {
   FaAngleRight,
-  FaSpinner,
   FaArrowLeft,
   FaRegCalendarAlt,
   FaShareAlt,
 } from 'react-icons/fa';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import FadeImage from '../components/ui/FadeImage';
+import useApiJson from '../hooks/useApiJson';
+import { apiUrl, peekJson } from '../lib/api';
 
 export default function ViewBlog() {
   const params = useParams();
   const [searchParams] = useSearchParams();
   const blogId = params.id || searchParams.get('id');
 
-  const [blog, setBlog] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data, loading: requestLoading, error: requestError } = useApiJson(blogId ? `/api/blogs/${blogId}` : null);
 
+  // Coming from the Blogs page the article is already known, so it is shown without waiting
+  const listed = !data && requestLoading
+    ? (peekJson('/api/blogs')?.blogs || []).find((item) => String(item.id) === String(blogId))
+    : null;
+  const blog = (data && data.blog) || listed || null;
+  const loading = requestLoading && !blog;
+  const error = !blogId
+    ? 'Blog ID not provided'
+    : requestError && !blog
+      ? (requestError.offline ? 'Error loading blog content' : 'Article not found')
+      : null;
+
+  const blogTitle = blog ? blog.title : '';
   useEffect(() => {
-    document.title = 'Ramson Colour Coaters - Blog Details';
-    if (!blogId) {
-      setError('Blog ID not provided');
-      setLoading(false);
-      return;
-    }
-
-    fetch(`/api/blogs/${blogId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.blog) {
-          setBlog(data.blog);
-          document.title = `${data.blog.title} | Ramson Colour Coaters`;
-        } else {
-          setError('Article not found');
-        }
-      })
-      .catch((err) => {
-        console.error('Error fetching blog:', err);
-        setError('Error loading blog content');
-      })
-      .finally(() => setLoading(false));
-  }, [blogId]);
+    document.title = blogTitle ? `${blogTitle} | Ramson Colour Coaters` : 'Ramson Colour Coaters - Blog Details';
+  }, [blogTitle]);
 
   return (
     <>
@@ -74,9 +66,20 @@ export default function ViewBlog() {
           <div className="row justify-content-center">
             <div className="col-lg-9">
               {loading ? (
-                <div className="text-center py-5">
-                  <FaSpinner className="icon-spin text-primary mb-3" size={28} />
-                  <p className="text-muted">Loading article details...</p>
+                // Placeholder with the article's shape, so the page does not jump when it arrives
+                <div
+                  className="card shadow-sm border-0 p-4 p-md-5"
+                  style={{ borderRadius: '16px', background: '#fff' }}
+                  aria-busy="true"
+                  aria-label="Loading article"
+                >
+                  <span className="skeleton-block skeleton-line" style={{ width: '30%' }} />
+                  <span className="skeleton-block mb-4" style={{ width: '80%', height: '34px' }} />
+                  <span className="skeleton-block mb-4" style={{ width: '100%', height: '360px', borderRadius: '12px' }} />
+                  <span className="skeleton-block skeleton-line" style={{ width: '100%' }} />
+                  <span className="skeleton-block skeleton-line" style={{ width: '96%' }} />
+                  <span className="skeleton-block skeleton-line" style={{ width: '88%' }} />
+                  <span className="skeleton-block skeleton-line" style={{ width: '60%' }} />
                 </div>
               ) : error || !blog ? (
                 <div className="card shadow-sm border-0 p-5 text-center" style={{ borderRadius: '16px' }}>
@@ -106,21 +109,24 @@ export default function ViewBlog() {
                     {blog.title}
                   </h2>
 
-                  <div className="mb-4 text-center">
-                    <img
-                      src={`/uploads/${blog.image}`}
-                      className="img-fluid"
+                  {/* The grey box holds the image's place while it loads */}
+                  <div
+                    className="mb-4 text-center"
+                    style={{
+                      aspectRatio: '16 / 9',
+                      maxHeight: '480px',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      background: 'var(--gray-100)',
+                      boxShadow: 'var(--shadow-md)',
+                    }}
+                  >
+                    <FadeImage
+                      src={apiUrl(`/uploads/${blog.image}`)}
+                      fallbackSrc="/images/banner-1.jpeg"
+                      loading="eager"
                       alt={blog.title}
-                      style={{
-                        maxHeight: '480px',
-                        width: '100%',
-                        objectFit: 'cover',
-                        borderRadius: '12px',
-                        boxShadow: 'var(--shadow-md)',
-                      }}
-                      onError={(e) => {
-                        e.target.src = '/images/banner-1.jpeg';
-                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                     />
                   </div>
 

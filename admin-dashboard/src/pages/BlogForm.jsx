@@ -4,6 +4,7 @@ import { FiArrowLeft, FiCheck, FiImage, FiUploadCloud } from 'react-icons/fi';
 import AdminLayout from '../components/AdminLayout';
 import { Alert, LoadingState, Spinner, useFilePreview, useToast } from '../components/ui';
 import { api, imageUrl } from '../lib/api';
+import { compressImage, formatBytes } from '../lib/image';
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const DEFAULT_AUTHOR = 'Ramson Colour Coaters';
@@ -66,8 +67,9 @@ export default function BlogForm() {
     };
   }, [id, isEdit]);
 
-  const handleFileChange = (e) => {
-    const chosen = e.target.files && e.target.files[0];
+  const handleFileChange = async (e) => {
+    const input = e.target;
+    const chosen = input.files && input.files[0];
     setError('');
     if (!chosen) {
       setImageFile(null);
@@ -75,17 +77,19 @@ export default function BlogForm() {
     }
     if (!chosen.type.startsWith('image/')) {
       setImageFile(null);
-      e.target.value = '';
+      input.value = '';
       setError('Please choose an image file (JPG, PNG or WEBP) for the cover.');
       return;
     }
-    if (chosen.size > MAX_IMAGE_BYTES) {
+    // Large photos are scaled down and re-saved here, so the website stays fast
+    const optimised = await compressImage(chosen);
+    if (optimised.size > MAX_IMAGE_BYTES) {
       setImageFile(null);
-      e.target.value = '';
+      input.value = '';
       setError('That cover image is larger than 8 MB. Please choose a smaller file.');
       return;
     }
-    setImageFile(chosen);
+    setImageFile(optimised);
   };
 
   const handleSubmit = async (e) => {
@@ -201,9 +205,11 @@ export default function BlogForm() {
               <label className="upload-zone upload-zone-sm" htmlFor="blog-image">
                 <FiUploadCloud aria-hidden="true" />
                 <span className="upload-zone-title">
-                  {imageFile ? imageFile.name : existingImage ? 'Replace image' : 'Choose an image'}
+                  {imageFile
+                    ? `${imageFile.name} (${formatBytes(imageFile.size)})`
+                    : existingImage ? 'Replace image' : 'Choose an image'}
                 </span>
-                <span className="upload-zone-hint">JPG, PNG or WEBP, up to 8 MB</span>
+                <span className="upload-zone-hint">JPG, PNG or WEBP. Large photos are optimised automatically.</span>
                 <input id="blog-image" type="file" accept="image/*" onChange={handleFileChange} />
               </label>
             </section>

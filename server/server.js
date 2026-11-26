@@ -8,7 +8,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+// CORS_ORIGINS: comma-separated list of sites allowed to call the API (all origins when empty)
+const corsOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+app.use(cors(corsOrigins.length ? { origin: corsOrigins } : undefined));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -17,8 +22,10 @@ const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsDir));
-app.use('/dashboard/uploads', express.static(uploadsDir));
+// Uploaded files get a unique name each time, so browsers may keep them for a month
+const uploadsCache = { maxAge: '30d' };
+app.use('/uploads', express.static(uploadsDir, uploadsCache));
+app.use('/dashboard/uploads', express.static(uploadsDir, uploadsCache));
  
 // API Routes
 app.use('/api/blogs', require('./routes/blogs'));
@@ -76,9 +83,16 @@ app.use((err, req, res, next) => {
   res.status(status).json({ success: false, error: message });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
+// Start Server once the database tables are ready
+require('./db')
+  .ready.then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server listening on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Could not connect to the database:', err.message);
+    process.exit(1);
+  });
 
 module.exports = app;

@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FiCheck, FiEdit2, FiImage, FiPlus, FiTrash2, FiUploadCloud } from 'react-icons/fi';
 import AdminLayout from '../components/AdminLayout';
 import { Alert, ConfirmDialog, EmptyState, LoadingState, Modal, Spinner, useFilePreview, useToast } from '../components/ui';
-import { api } from '../lib/api';
+import { api, imageUrl } from '../lib/api';
+import { compressImage, formatBytes } from '../lib/image';
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
@@ -21,7 +22,7 @@ function SlideImage({ src, alt }) {
       </div>
     );
   }
-  return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} />;
+  return <img src={imageUrl(src)} alt={alt} loading="lazy" onError={() => setFailed(true)} />;
 }
 
 export default function HomeImages() {
@@ -69,8 +70,9 @@ export default function HomeImages() {
     setFile(null);
   };
 
-  const handleFileChange = (e) => {
-    const chosen = e.target.files && e.target.files[0];
+  const handleFileChange = async (e) => {
+    const input = e.target;
+    const chosen = input.files && input.files[0];
     setFormError('');
     if (!chosen) {
       setFile(null);
@@ -78,17 +80,19 @@ export default function HomeImages() {
     }
     if (!chosen.type.startsWith('image/')) {
       setFile(null);
-      e.target.value = '';
+      input.value = '';
       setFormError('Please choose an image file (JPG, PNG or WEBP).');
       return;
     }
-    if (chosen.size > MAX_IMAGE_BYTES) {
+    // Large photos are scaled down and re-saved here, so the home page stays fast
+    const optimised = await compressImage(chosen);
+    if (optimised.size > MAX_IMAGE_BYTES) {
       setFile(null);
-      e.target.value = '';
+      input.value = '';
       setFormError('That image is larger than 8 MB. Please choose a smaller file.');
       return;
     }
-    setFile(chosen);
+    setFile(optimised);
   };
 
   const isEdit = Boolean(editing && editing.id !== null);
@@ -247,8 +251,10 @@ export default function HomeImages() {
 
                 <label className="upload-zone" htmlFor="banner-image">
                   <FiUploadCloud aria-hidden="true" />
-                  <span className="upload-zone-title">{file ? file.name : 'Choose an image'}</span>
-                  <span className="upload-zone-hint">JPG, PNG or WEBP, up to 8 MB</span>
+                  <span className="upload-zone-title">
+                    {file ? `${file.name} (${formatBytes(file.size)})` : 'Choose an image'}
+                  </span>
+                  <span className="upload-zone-hint">JPG, PNG or WEBP. Large photos are optimised automatically.</span>
                   <input id="banner-image" type="file" accept="image/*" onChange={handleFileChange} />
                 </label>
                 <p className="help">

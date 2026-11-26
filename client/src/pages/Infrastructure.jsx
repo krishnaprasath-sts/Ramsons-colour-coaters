@@ -84,7 +84,7 @@ export default function Infrastructure() {
             <div className="bento-col-8">
               <div className="bento-card">
                 <div className="bento-img-wrap bento-img-wrap-facility">
-                  <img src="/images/w6.jpg" alt="Ramson Colour Coaters coating facility" />
+                  <img loading="lazy" decoding="async" src="/images/w6.jpg" alt="Ramson Colour Coaters coating facility" />
                 </div>
                 <div className="bento-body">
                   <div className="bento-location">
@@ -113,7 +113,7 @@ export default function Infrastructure() {
             <div className="bento-col-4">
               <div className="bento-card bento-card-dark">
                 <div className="bento-img-wrap" style={{ height: '200px' }}>
-                  <img src="/images/WhatsApp Image 2020-08-03 at 12.43.07 PM.jpeg" alt="GEMA & ELECTRON Equipment" />
+                  <img loading="lazy" decoding="async" src="/images/WhatsApp Image 2020-08-03 at 12.43.07 PM.jpeg" alt="GEMA & ELECTRON Equipment" />
                 </div>
                 <div className="bento-body">
                   <div className="bento-stat-num">5 Electrostatic Guns</div>
@@ -134,7 +134,7 @@ export default function Infrastructure() {
             <div className="bento-col-4">
               <div className="bento-card">
                 <div className="bento-img-wrap">
-                  <img src="/images/slide-4-compressed.jpg" alt="Pre-treatment Tanks" />
+                  <img loading="lazy" decoding="async" src="/images/slide-4-compressed.jpg" alt="Pre-treatment Tanks" />
                 </div>
                 <div className="bento-body">
                   <div className="bento-stat-num">12 Dipping Tanks</div>
@@ -155,7 +155,7 @@ export default function Infrastructure() {
             <div className="bento-col-4">
               <div className="bento-card">
                 <div className="bento-img-wrap">
-                  <img src="/images/w8.jpg" alt="Powder Coating Booths" />
+                  <img loading="lazy" decoding="async" src="/images/w8.jpg" alt="Powder Coating Booths" />
                 </div>
                 <div className="bento-body">
                   <div className="bento-stat-num">3 Spray Booths</div>
@@ -176,7 +176,7 @@ export default function Infrastructure() {
             <div className="bento-col-4">
               <div className="bento-card">
                 <div className="bento-img-wrap">
-                  <img src="/images/w5.jpg" alt="Thermal Curing Ovens" />
+                  <img loading="lazy" decoding="async" src="/images/w5.jpg" alt="Thermal Curing Ovens" />
                 </div>
                 <div className="bento-body">
                   <div className="bento-stat-num">25 Ft Max Length</div>
@@ -199,7 +199,7 @@ export default function Infrastructure() {
                 <div className="row no-gutters align-items-center">
                   <div className="col-lg-6">
                     <div className="bento-img-wrap" style={{ height: '100%', minHeight: '320px' }}>
-                      <img src="/images/WhatsApp Image 2020-09-11 at 12.18.03 PM.jpeg" alt="Effluent Treatment Plant" />
+                      <img loading="lazy" decoding="async" src="/images/WhatsApp Image 2020-09-11 at 12.18.03 PM.jpeg" alt="Effluent Treatment Plant" />
                     </div>
                   </div>
                   <div className="col-lg-6">

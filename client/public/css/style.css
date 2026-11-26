@@ -38,10 +38,9 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@font-face {
-  font-family: 'Bahnschrift';
-  src: url('/fonts/BAHNSCHRIFT.TTF') format('truetype');
-}
+/* 'Bahnschrift' in --font-main is only a last fallback (it ships with Windows).
+   It is deliberately NOT downloaded: the 320 KB file used to load on every first visit
+   while the Google Fonts above were still on their way. */
 
 /* ==========================================================================
    BASE & RESET
@@ -247,6 +246,9 @@ section {
        and there are no empty bars beside it.
    The hero is therefore as tall as the uploaded image makes it: a wide image gives
    a short hero, a squarer image gives a taller one.
+
+   The space is reserved BEFORE the image arrives (.hero-stage gets the image's
+   aspect-ratio from Carousel.jsx), so the page below never jumps while it loads.
 */
 .hero-wrapper {
   position: relative;
@@ -254,17 +256,103 @@ section {
   background: var(--dark);
 }
 
-.hero-slide-container {
+.hero-stage {
   position: relative;
   width: 100%;
+  aspect-ratio: 1351 / 700;
   overflow: hidden;
+  background: linear-gradient(120deg, #0f172a 0%, #1e293b 55%, #0c4a6e 100%);
+}
+
+/* Soft moving highlight while the banner image is still loading */
+.hero-stage.is-loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.07) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: service-skeleton 1.6s ease-in-out infinite;
+}
+
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.7s ease, visibility 0s linear 0.7s;
+}
+
+.hero-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.7s ease;
 }
 
 .hero-slide-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   display: block;
-  transform: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.hero-slide-img.is-loaded {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-stage.is-loading::before {
+    animation: none;
+  }
+
+  .hero-slide,
+  .hero-slide.is-active,
+  .hero-slide-img {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   LOADING PLACEHOLDERS
+   ========================================================================== */
+/* Images fade in once loaded instead of popping in line by line */
+.fade-img {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.fade-img.is-loaded {
+  opacity: 1;
+}
+
+.blog-card-img.fade-img {
+  transition: opacity 0.4s ease, transform 0.5s ease;
+}
+
+.skeleton-block {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-50) 50%, var(--gray-100) 75%);
+  background-size: 200% 100%;
+  animation: service-skeleton 1.4s ease-in-out infinite;
+}
+
+.skeleton-line {
+  height: 14px;
+  margin-bottom: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-img {
+    transition: none;
+  }
+
+  .skeleton-block {
+    animation: none;
+  }
 }
 
 .hero-overlay {
@@ -884,6 +972,7 @@ section {
   position: relative;
   height: 220px;
   overflow: hidden;
+  background: var(--gray-100);
 }
 
 .blog-card-img {
@@ -1484,10 +1573,107 @@ section {
   .navbar-modern {
     padding: 10px 0;
   }
+  /* Menu button (bars / cross icons come from react-icons in Header.jsx) */
+  .navbar-modern .navbar-toggler {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    /* No border or box: just the icon, with a soft tint while the menu is open */
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--primary-dark);
+    box-shadow: none;
+    transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .navbar-modern .navbar-toggler:focus {
+    outline: none;
+  }
+  .navbar-modern .navbar-toggler:focus-visible {
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.3);
+  }
+  .navbar-modern .navbar-toggler.is-open {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  .nav-toggle-icon {
+    position: absolute;
+    font-size: 24px;
+    transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .nav-toggle-icon--close {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+  }
+  .navbar-toggler.is-open .nav-toggle-icon--menu {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.6);
+  }
+  .navbar-toggler.is-open .nav-toggle-icon--close {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Menu panel: a card that drops down OVER the page (absolute, so the content below never moves) */
   .navbar-modern .navbar-collapse {
-    padding: 14px 0 8px;
-    border-top: 1px solid var(--gray-200);
-    margin-top: 10px;
+    display: block;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 10px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.06);
+    /* Never taller than the screen: a long menu scrolls inside the card */
+    max-height: calc(100vh - 170px);
+    max-height: calc(100dvh - 170px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* A closed menu can never catch a tap, even while it is still fading out */
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.28s;
+  }
+  .navbar-modern .navbar-collapse.show {
+    pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s;
+  }
+  .navbar-modern .navbar-collapse > .navbar-nav {
+    /* Full-width rows: cancels the desktop "ml-auto" that pushes the links to the right */
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  /* Dimmed layer behind the open menu; a tap on it closes the menu (see Header.jsx) */
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 999; /* just under .main-header-sticky (1000) */
+    background: rgba(15, 23, 42, 0.38);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-backdrop.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.25s ease, visibility 0s;
   }
   .navbar-modern .nav-link {
     margin: 2px 0;
@@ -1948,5 +2134,30 @@ section {
   }
   .brand-subtitle {
     font-size: 11px;
+  }
+}
+
+/* ==========================================================================
+   MOBILE MENU: BACKDROP DEFAULT & REDUCED MOTION
+   ========================================================================== */
+/* The backdrop only exists on phone / tablet widths (it is switched on inside the 991px block) */
+.nav-backdrop {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  .nav-backdrop {
+    display: block;
+  }
+}
+
+@media (max-width: 991px) and (prefers-reduced-motion: reduce) {
+  .navbar-modern .navbar-toggler,
+  .nav-toggle-icon,
+  .navbar-modern .navbar-collapse,
+  .navbar-modern .navbar-collapse.show,
+  .nav-backdrop,
+  .nav-backdrop.is-visible {
+    transition: none;
   }
 }

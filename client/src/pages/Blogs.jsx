@@ -1,25 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaAngleRight, FaSpinner, FaRegClock, FaArrowRight } from 'react-icons/fa';
+import { FaAngleRight, FaRegClock, FaArrowRight } from 'react-icons/fa';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import RevealText from '../components/ui/RevealText';
+import FadeImage from '../components/ui/FadeImage';
+import useApiJson from '../hooks/useApiJson';
+import { apiUrl } from '../lib/api';
 
 export default function Blogs() {
-  const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading } = useApiJson('/api/blogs');
+  const blogs = data && Array.isArray(data.blogs) ? data.blogs : [];
 
   useEffect(() => {
     document.title = 'Industry Articles & Insights | Ramson Colour Coaters Coimbatore';
-    fetch('/api/blogs')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setBlogs(data.blogs);
-        }
-      })
-      .catch((err) => console.error('Error fetching blogs:', err))
-      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -55,10 +49,20 @@ export default function Blogs() {
 
           <div className="row">
             {loading ? (
-              <div className="col-12 text-center py-5">
-                <FaSpinner className="icon-spin text-primary mb-3" size={28} />
-                <p className="text-muted">Loading articles...</p>
-              </div>
+              // Placeholder cards with the same shape as the real ones, so nothing jumps
+              [0, 1, 2].map((n) => (
+                <div className="col-lg-4 col-md-6 mb-4" key={n} aria-hidden="true">
+                  <div className="blog-card-modern">
+                    <div className="blog-card-img-wrap skeleton-block" style={{ borderRadius: 0 }} />
+                    <div className="blog-card-body">
+                      <span className="skeleton-block skeleton-line" style={{ width: '35%' }} />
+                      <span className="skeleton-block skeleton-line" style={{ width: '90%', height: '20px' }} />
+                      <span className="skeleton-block skeleton-line" style={{ width: '100%' }} />
+                      <span className="skeleton-block skeleton-line" style={{ width: '70%' }} />
+                    </div>
+                  </div>
+                </div>
+              ))
             ) : blogs.length === 0 ? (
               <div className="col-12 text-center py-5">
                 <p className="text-muted">No blog articles published yet. Please check back soon!</p>
@@ -68,13 +72,11 @@ export default function Blogs() {
                 <div className="col-lg-4 col-md-6 mb-4" key={blog.id}>
                   <div className="blog-card-modern">
                     <div className="blog-card-img-wrap">
-                      <img
-                        src={`/uploads/${blog.image}`}
+                      <FadeImage
+                        src={apiUrl(`/uploads/${blog.image}`)}
+                        fallbackSrc="/images/banner-1.jpeg"
                         className="blog-card-img"
                         alt={blog.title}
-                        onError={(e) => {
-                          e.target.src = '/images/banner-1.jpeg';
-                        }}
                       />
                     </div>
                     <div className="blog-card-body">

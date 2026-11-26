@@ -40,9 +40,11 @@ router.post('/', async (req, res) => {
       ? `[Service: ${service}]${cleanMessage ? ' ' + cleanMessage : ''}`
       : cleanMessage;
 
-    // Save contact / quote enquiry into SQLite database
-    const stmt = db.prepare('INSERT INTO contacts (name, companyname, email, phone, message, source) VALUES (?, ?, ?, ?, ?, ?)');
-    const info = stmt.run(cleanName, cleanCompany, cleanEmail, cleanPhone, fullMessage, source || 'Contact Form');
+    // Save contact / quote enquiry into the database
+    const info = await db.run(
+      'INSERT INTO contacts (name, companyname, email, phone, message, source) VALUES (?, ?, ?, ?, ?, ?)',
+      [cleanName, cleanCompany, cleanEmail, cleanPhone, fullMessage, source || 'Contact Form']
+    );
 
     // Send email via nodemailer when SMTP settings are configured
     let emailSent = false;
@@ -67,7 +69,7 @@ router.post('/', async (req, res) => {
 
         const enquirySource = source || 'Contact Form';
         const isQuotePopup = enquirySource === 'Get a Quote Popup';
-        const enquiryId = Number(info.lastInsertRowid);
+        const enquiryId = info.insertId;
         const refCode = `RCC-${String(enquiryId).padStart(4, '0')}`;
         const submittedAt = new Date().toLocaleString('en-IN', {
           timeZone: 'Asia/Kolkata',
@@ -331,7 +333,7 @@ router.post('/', async (req, res) => {
     ) {
       return res.json({
         success: true,
-        id: Number(info.lastInsertRowid),
+        id: info.insertId,
         emailSent,
         message: 'Enquiry submitted successfully!',
       });
@@ -345,9 +347,9 @@ router.post('/', async (req, res) => {
 });
 
 // GET /api/contact/all (for viewing enquiries in admin)
-router.get('/all', requireAdmin, (req, res) => {
+router.get('/all', requireAdmin, async (req, res) => {
   try {
-    const contacts = db.prepare('SELECT * FROM contacts ORDER BY id DESC').all();
+    const contacts = await db.all('SELECT * FROM contacts ORDER BY id DESC');
     res.json({ success: true, contacts });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -355,13 +357,13 @@ router.get('/all', requireAdmin, (req, res) => {
 });
 
 // DELETE /api/contact/:id (for deleting an enquiry in admin)
-router.delete('/:id', requireAdmin, (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({ success: false, error: 'Invalid enquiry ID.' });
     }
-    const info = db.prepare('DELETE FROM contacts WHERE id = ?').run(id);
+    const info = await db.run('DELETE FROM contacts WHERE id = ?', [id]);
     if (info.changes === 0) {
       return res.status(404).json({ success: false, error: 'Enquiry not found.' });
     }

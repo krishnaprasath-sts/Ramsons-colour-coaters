@@ -4,7 +4,7 @@ const db = require('../db');
 const { createToken, verifyToken, tokenFromRequest } = require('../middleware/auth');
 
 // POST /api/auth/login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { username, password, name } = req.body;
     const loginUser = username || name;
@@ -13,9 +13,10 @@ router.post('/login', (req, res) => {
       return res.status(400).json({ success: false, error: 'Please check empty fields...!' });
     }
 
-    const row = db.prepare('SELECT id, username FROM login WHERE username = ? AND password = ?').get(loginUser, password);
+    const row = await db.get('SELECT id, username, password FROM login WHERE username = ?', [loginUser]);
 
-    if (row) {
+    // Compare in JavaScript: MySQL's default text comparison ignores letter case
+    if (row && row.password === String(password)) {
       res.json({
         success: true,
         message: 'Login successful',

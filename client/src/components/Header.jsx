@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
+  FaBars,
+  FaTimes,
   FaPhoneAlt,
   FaEnvelope,
   FaMapMarkerAlt,
@@ -10,30 +12,52 @@ import {
   FaArrowRight,
 } from 'react-icons/fa';
 import QuoteModal from './QuoteModal';
+import useApiJson from '../hooks/useApiJson';
+import { apiUrl } from '../lib/api';
+
+const DEFAULT_LOGO = '/images/logo.jpg';
 
 export default function Header() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
-  const [logoSrc, setLogoSrc] = useState('/images/logo.jpg');
   const location = useLocation();
   const currentPath = location.pathname.toLowerCase();
 
+  // Shared and cached, so the logo is not fetched again (and does not flicker) on every page
+  const { data: homeImages } = useApiJson('/api/home-images');
+  const logoSrc = homeImages?.images?.headerLogo?.src || DEFAULT_LOGO;
+
+  // The mobile menu is a panel that drops down over the page. It closes when the page changes...
   useEffect(() => {
-    fetch('/api/home-images')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.images && data.images.headerLogo?.src) {
-          setLogoSrc(data.images.headerLogo.src);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    setIsNavOpen(false);
+  }, [location.pathname]);
+
+  // ...on Escape, or when the screen becomes desktop-sized.
+  // (A tap outside lands on the .nav-backdrop below, which closes it too.)
+  useEffect(() => {
+    if (!isNavOpen) return undefined;
+    const close = () => setIsNavOpen(false);
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') close();
+    };
+    const desktop = window.matchMedia('(min-width: 992px)');
+    const onDesktop = (e) => {
+      if (e.matches) close();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    desktop.addEventListener('change', onDesktop);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      desktop.removeEventListener('change', onDesktop);
+    };
+  }, [isNavOpen]);
 
   const isActive = (path) => {
-    if (path === '/' || path === '/home') {
+    const target = path.toLowerCase();
+    if (target === '/' || target === '/home') {
       return currentPath === '/' || currentPath === '/home';
     }
-    return currentPath === path.toLowerCase() || currentPath.startsWith(path.toLowerCase() + '/');
+    return currentPath === target || currentPath.startsWith(target + '/');
   };
 
   return (
@@ -79,10 +103,14 @@ export default function Header() {
           <nav className="navbar navbar-expand-lg navbar-light navbar-modern">
             <Link to="/Home" className="navbar-brand navbar-brand-modern">
               <img
-                src={logoSrc}
+                src={apiUrl(logoSrc)}
                 className="navbar-logo-img"
                 alt="Ramson Colour Coaters Logo"
-                onError={(e) => { e.target.src = '/images/logo.jpg'; }}
+                width="100"
+                height="80"
+                onError={(e) => {
+                  if (!e.target.src.endsWith(DEFAULT_LOGO)) e.target.src = DEFAULT_LOGO;
+                }}
               />
               {/* <div className="brand-text-wrap">
                 <span className="brand-title">Ramson</span>
@@ -90,15 +118,17 @@ export default function Header() {
               </div> */}
             </Link>
 
+            {/* Mobile menu button: bars when closed, a cross when open */}
             <button
-              className="navbar-toggler"
+              className={`navbar-toggler${isNavOpen ? ' is-open' : ''}`}
               type="button"
-              onClick={() => setIsNavOpen(!isNavOpen)}
+              onClick={() => setIsNavOpen((open) => !open)}
               aria-controls="navbarNav"
               aria-expanded={isNavOpen}
-              aria-label="Toggle navigation"
+              aria-label={isNavOpen ? 'Close menu' : 'Open menu'}
             >
-              <span className="navbar-toggler-icon"></span>
+              <FaBars className="nav-toggle-icon nav-toggle-icon--menu" aria-hidden="true" />
+              <FaTimes className="nav-toggle-icon nav-toggle-icon--close" aria-hidden="true" />
             </button>
 
             <div className={`collapse navbar-collapse ${isNavOpen ? 'show' : ''}`} id="navbarNav">
@@ -175,6 +205,14 @@ export default function Header() {
           </nav>
         </div>
       </header>
+
+      {/* Dims the page behind the open mobile menu; tapping it closes the menu.
+          It sits outside <header> because the header's blur effect would trap a fixed element inside it. */}
+      <div
+        className={`nav-backdrop${isNavOpen ? ' is-visible' : ''}`}
+        onClick={() => setIsNavOpen(false)}
+        aria-hidden="true"
+      />
 
       <QuoteModal isOpen={isQuoteOpen} onClose={() => setIsQuoteOpen(false)} />
     </>

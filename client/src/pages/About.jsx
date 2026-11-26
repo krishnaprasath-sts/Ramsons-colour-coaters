@@ -71,6 +71,10 @@ export default function About() {
               >
                 <img
                   src="/images/ramsonmap.png"
+                  loading="lazy"
+                  decoding="async"
+                  width="840"
+                  height="547"
                   className="img-fluid"
                   alt="Ramson Coimbatore Facility Location Map"
                   style={{ borderRadius: '12px' }}

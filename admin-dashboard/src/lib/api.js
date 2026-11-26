@@ -1,5 +1,14 @@
 // Shared helpers for talking to the backend and formatting its data.
 
+// Backend API address. Empty in development (Vite proxies /api and /uploads);
+// set VITE_API_URL for production builds (see .env.production).
+export const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
+/** Address of the public website (separate dev server while developing). */
+export const SITE_URL = (
+  import.meta.env.VITE_SITE_URL || (import.meta.env.DEV ? 'http://localhost:3000' : '')
+).replace(/\/+$/, '');
+
 const TOKEN_KEY = 'adminToken';
 const USER_KEY = 'adminUser';
 
@@ -49,7 +58,7 @@ export async function api(path, { method = 'GET', body, json } = {}) {
 
   let res;
   try {
-    res = await fetch(path, { method, headers, body: payload });
+    res = await fetch(API_URL + path, { method, headers, body: payload });
   } catch {
     throw new Error('Cannot reach the server. Please check that the backend is running.');
   }
@@ -76,11 +85,17 @@ export async function api(path, { method = 'GET', body, json } = {}) {
   return data;
 }
 
-/** Blog covers are stored as a bare filename; banners already carry a full path. */
+/**
+ * Blog covers are stored as a bare filename; banners already carry a full path.
+ * Uploaded files live on the API server, default /images on the public website.
+ */
 export function imageUrl(image) {
   if (!image) return '';
-  if (image.startsWith('http') || image.startsWith('/')) return image;
-  return `/uploads/${image}`;
+  if (/^(https?:|blob:|data:)/.test(image)) return image;
+  if (image.startsWith('/uploads/')) return API_URL + image;
+  if (image.startsWith('/images/')) return SITE_URL + image;
+  if (image.startsWith('/')) return image;
+  return `${API_URL}/uploads/${image}`;
 }
 
 /** SQLite timestamps look like "2026-11-14 10:33:55" (UTC). */
@@ -113,6 +128,3 @@ export function initials(name) {
   if (parts.length === 0) return '?';
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
 }
-
-/** Address of the public website (separate dev server while developing). */
-export const SITE_URL = import.meta.env.DEV ? 'http://localhost:3000' : '';

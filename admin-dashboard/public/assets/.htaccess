@@ -1,0 +1,5 @@
+# Build files: their names contain a hash that changes whenever the content changes,
+# so browsers may keep them for a year without ever asking again.
+<IfModule mod_headers.c>
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>

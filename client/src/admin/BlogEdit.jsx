@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import AdminLayout from './AdminLayout';
 import { authHeaders, sessionExpired } from './session';
+import { apiUrl } from '../lib/api';
 
 export default function BlogEdit() {
   const { id } = useParams();
@@ -86,7 +87,7 @@ export default function BlogEdit() {
                 <label className="form-label font-weight-bold">Current Image</label>
                 <div>
                   <img
-                    src={`/uploads/${currentImage}`}
+                    src={apiUrl(`/uploads/${currentImage}`)}
                     alt={title}
                     style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'cover', borderRadius: '5px' }}
                     onError={(e) => { e.target.src = '/images/banner-1.jpeg'; }}
